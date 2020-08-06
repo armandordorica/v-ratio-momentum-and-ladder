@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 
 class Portfolio:
+
     def __init__(self, tickers_str):
 
         self.tickers_str = tickers_str
@@ -13,24 +14,24 @@ class Portfolio:
     def download_data(self, start_date, end_date):
 
         #declare price history location
-        file_name = self.tickers_densed_str + "_" + start_date + "_" + end_date
-        ap_file_name = file_name + "_AP"
+        base_name = self.tickers_densed_str + "_" + start_date + "_" + end_date
 
-        file_dir = "data/" + file_name
-        ap_file_dir = "data/" + ap_file_name
+        file_dir = "data/" + base_name + ".csv"
+
+        ap_file_dir = "data/" + base_name + "_AP.csv"
 
         #download and save price history if not found locally
-        if not (isfile(file_dir+".csv")):
+        if not (isfile(file_dir)):
 
             price_df = yf.download(self.tickers_str,
                                    start= start_date,
                                    end= end_date)
 
-            price_df["Adj Close"].to_csv(ap_file_dir+".csv", header=True)
-            price_df["Close"].to_csv(file_dir+".csv", header=True)
+            price_df["Adj Close"].to_csv(ap_file_dir, header=True)
+            price_df["Close"].to_csv(file_dir, header=True)
 
         else:
-            print("data already exist!")
+            print("requested data history already exists!")
 
         return
 
