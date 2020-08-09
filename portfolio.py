@@ -1,6 +1,7 @@
 from os.path import isfile
 import yfinance as yf
 import pandas as pd
+import regex as re
 
 class Portfolio:
 
@@ -11,7 +12,7 @@ class Portfolio:
         self.tickers_densed_str = ''.join(tickers_str.split())
         self.data = None
 
-    def download_data(self, start_date, end_date):
+    def _download_data(self, start_date, end_date):
 
         #declare price history location
         base_name = self.tickers_densed_str + "_" + start_date + "_" + end_date
@@ -35,6 +36,27 @@ class Portfolio:
 
         return
 
-#example
-portfolio = Portfolio("SPY AAPL")
-portfolio.download_data("2017-01-01", "2017-04-30")
+    #TODO: parse frequency_str to return shift and holding period
+    def _parse_frequency(self, frequency_str):
+
+
+    #TODO: reads result files and evaluate backtest performance
+    def _evaluate(self):
+
+        return
+
+    #entry point of the backtest
+    def backtest(self, strategy, window, holding, rebalance_ratio=1):
+
+        #TODO: call _parse_frequency
+
+        #TODO: loop call the strategy execution function
+        #to generate result files
+
+        #TODO: call _evaluate
+
+# =============================================================================
+# #example
+# portfolio = Portfolio("SPY AAPL")
+# portfolio.download_data("2017-01-01", "2017-04-30")
+# =============================================================================
