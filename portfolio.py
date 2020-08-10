@@ -1,7 +1,7 @@
 from os.path import isfile
 import yfinance as yf
 import pandas as pd
-import regex as re
+import re
 
 class Portfolio:
 
@@ -36,9 +36,14 @@ class Portfolio:
 
         return
 
-    #TODO: parse frequency_str to return shift and holding period
+    #TODO: parse frequency_str to return freq, shift and number of sub backtesting
     def _parse_frequency(self, frequency_str):
 
+        size = int(re.search("\d+%", frequency_str).group().strip("%"))
+        shift = int(int(re.match("\d+", frequency_str).group()) * size / 100)
+        unit = re.search("[A-Z]-[A-Z]", frequency_str).group()[0:-2]
+        freq = re.match("\d+[A-Z]-[A-Z]*", frequency_str).group()
+        return freq, str(shift)+unit, int(100/size)
 
     #TODO: reads result files and evaluate backtest performance
     def _evaluate(self):
@@ -46,17 +51,25 @@ class Portfolio:
         return
 
     #entry point of the backtest
-    def backtest(self, strategy, window, holding, rebalance_ratio=1):
+    def backtest(self, strategy, frequency, holding, rebalance_ratio=1):
 
         #TODO: call _parse_frequency
+        freq, shift, n = self._parse_frequency(frequency)
 
         #TODO: loop call the strategy execution function
         #to generate result files
+        for i in range(n):
+        #use momentum trading here
+            return
 
         #TODO: call _evaluate
+
+        return
 
 # =============================================================================
 # #example
 # portfolio = Portfolio("SPY AAPL")
 # portfolio.download_data("2017-01-01", "2017-04-30")
 # =============================================================================
+portfolio = Portfolio("")
+print(portfolio._parse_frequency("4W-FRI-25%"))
