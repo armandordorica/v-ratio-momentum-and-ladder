@@ -2,6 +2,13 @@ from os.path import isfile
 import yfinance as yf
 import pandas as pd
 import re
+from RotationalMomentumWFreqFunc import rotational_momentum
+import math
+import WhiteRealityCheckFor1
+from helper import getDate
+import matplotlib.pyplot as plt
+from matplotlib import style
+
 
 class Portfolio:
 
@@ -48,6 +55,57 @@ class Portfolio:
     #TODO: reads result files and evaluate backtest performance
     def _evaluate(self):
 
+        def evaluate(dfPRR):
+
+            try:
+                sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252))
+            except ZeroDivisionError:
+                sharpe = 0.0
+            if verbose:
+                style.use('fivethirtyeight')
+                dfPRR['I'].plot()
+                plt.legend()
+                plt.show()
+                #plt.savefig(r'Results\%s.png' %(title))
+                #plt.close()
+
+            start = 1
+            start_val = start
+            end_val = dfPRR['I'].iat[-1]
+
+
+            start_date = getDate(dfPRR.iloc[0].name)
+            end_date = getDate(dfPRR.iloc[-1].name)
+            days = (end_date - start_date).days
+
+
+            TotaAnnReturn = (end_val-start_val)/start_val/(days/360)
+            TotaAnnReturn_trading = (end_val-start_val)/start_val/(days/252)
+            volatility = dfPRR['ALL_R'].std() * math.sqrt(252)
+            volatility_dia = dfPRR['DIA'].std() * math.sqrt(252)
+            volatility_tlt = dfPRR['TLT'].std() * math.sqrt(252)
+
+            CAGR_trading = round(((float(end_val) / float(start_val)) ** (1/(days/252.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
+            CAGR = round(((float(end_val) / float(start_val)) ** (1/(days/350.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
+            if verbose:
+                print ("TotaAnnReturn = %f" %(TotaAnnReturn*100))
+                print ("CAGR = %f" %(CAGR*100))
+                print ("Sharpe Ratio = %f" %(round(sharpe,3)))
+                print("Volatility= %f" %(round(volatility,3)))
+                print("Volatility DIA= %f" %(round(volatility_dia,3)))
+                print("Volatility TLT= %f" %(round(volatility_tlt,3)))
+
+                #Detrending Prices and Returns
+                WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
+                dfPRR.to_csv(r'Results\dfPRR.csv', header = True, index=True, encoding='utf-8')
+                print(dfPRR)
+
+        #read in all result files
+
+        #evaluate each sub portfolio
+
+        #join all result files and evaluate
+
         return
 
     #entry point of the backtest
@@ -59,8 +117,8 @@ class Portfolio:
         #TODO: loop call the strategy execution function
         #to generate result files
         for i in range(n):
-        #use momentum trading here
-            return
+            #use momentum trading here
+            rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight, include_cash, verbose)
 
         #TODO: call _evaluate
 
@@ -71,5 +129,5 @@ class Portfolio:
 # portfolio = Portfolio("SPY AAPL")
 # portfolio.download_data("2017-01-01", "2017-04-30")
 # =============================================================================
-portfolio = Portfolio("")
-print(portfolio._parse_frequency("4W-FRI-25%"))
+portf = Portfolio("")
+print(portf._parse_frequency("4W-FRI-25%"))
