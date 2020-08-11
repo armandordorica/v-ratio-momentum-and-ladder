@@ -38,7 +38,7 @@ def bootstrap(ser):
     #sorts the 50000 averages
     mb.sort()
     #calculates the 95% conficence interval (two tails) threshold for the theoretical averages
-    print(np.percentile(mb, [2.5, 97.5])) 
+    print(np.percentile(mb, [2.5, 97.5]))
     threshold = np.percentile(mb, [percentile])[0]
 
 
@@ -53,12 +53,13 @@ def bootstrap(ser):
         count_vals += 1
         if i > ave:
             break
-        
+
     #p is based on the count that are larger than ave so 1-count is needed:
     p = 1-count_vals/len(mb)
 
     print("p_value:")
     print(p)
+    return p
 
 
     '''
