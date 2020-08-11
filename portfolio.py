@@ -19,6 +19,7 @@ class Portfolio:
         self.tickers_densed_str = ''.join(tickers_str.split())
         self.data = None
 
+    #TODO: move this to data_helper.py
     def _download_data(self, start_date, end_date):
 
         #declare price history location
@@ -52,6 +53,7 @@ class Portfolio:
     #TODO: read result files and evaluate backtest performance
     def _evaluate(self, df_list):
 
+        #TODO: move this function to computation_helper.py
         def evaluate(dfPRR):
 
             try:
@@ -93,16 +95,24 @@ class Portfolio:
                 print("Volatility TLT= %f" %(round(volatility_tlt,3)))
 
                 #Detrending Prices and Returns
-                WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
+                p_val = WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
                 dfPRR.to_csv(r'Results\dfPRR.csv', header = True,
                              index=True, encoding='utf-8')
                 print(dfPRR)
+            return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val
 
         #evaluate each sub portfolio
+        for df in df_list:
+            dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(df)
 
         #join all result files and evaluate
+        if len(df_list) > 1:
 
-        return
+            #join date, asset price,_NUL, return, all return, etc
+            df = pd.DataFrame()
+
+            dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(df)
+        return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility
 
     #entry point of the backtest
     def backtest(self, strategy, frequency, holding, rebalance_ratio=1):
@@ -122,7 +132,7 @@ class Portfolio:
             df_list.append(df)
 
         #TODO: call _evaluate
-        self._evaluate(df_list)
+        df, TotaAnnReturn, CAGR, sharpe, volatility = self._evaluate(df_list)
 
         return
 
