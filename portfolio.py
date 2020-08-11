@@ -12,8 +12,8 @@ from matplotlib import style
 
 class Portfolio:
 
-    def __init__(self, tickers_str):
-
+    def __init__(self, tickers_str, datafile_alias):
+        self.alias = datafile_alias
         self.tickers_str = tickers_str
         self.tickers_list = tickers_str.split()
         self.tickers_densed_str = ''.join(tickers_str.split())
@@ -22,19 +22,15 @@ class Portfolio:
     def _download_data(self, start_date, end_date):
 
         #declare price history location
-        base_name = self.tickers_densed_str + "_" + start_date + "_" + end_date
-
-        file_dir = "data/" + base_name + ".csv"
-
-        ap_file_dir = "data/" + base_name + "_AP.csv"
+        base_name = self.alias + "_" + start_date + "_" + end_date
+        file_dir = "Data/" + base_name + ".csv"
+        ap_file_dir = "Data/" + base_name + "_AP.csv"
 
         #download and save price history if not found locally
         if not (isfile(file_dir)):
-
             price_df = yf.download(self.tickers_str,
                                    start= start_date,
                                    end= end_date)
-
             price_df["Adj Close"].to_csv(ap_file_dir, header=True)
             price_df["Close"].to_csv(file_dir, header=True)
 
@@ -43,7 +39,8 @@ class Portfolio:
 
         return
 
-    #TODO: parse frequency_str to return freq, shift and number of sub backtesting
+    #TODO: parse frequency_str to return freq, shift and number of
+    #sub backtesting
     def _parse_frequency(self, frequency_str):
 
         size = int(re.search("\d+%", frequency_str).group().strip("%"))
@@ -52,8 +49,8 @@ class Portfolio:
         freq = re.match("\d+[A-Z]-[A-Z]*", frequency_str).group()
         return freq, str(shift)+unit, int(100/size)
 
-    #TODO: reads result files and evaluate backtest performance
-    def _evaluate(self):
+    #TODO: read result files and evaluate backtest performance
+    def _evaluate(self, df_list):
 
         def evaluate(dfPRR):
 
@@ -97,10 +94,9 @@ class Portfolio:
 
                 #Detrending Prices and Returns
                 WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
-                dfPRR.to_csv(r'Results\dfPRR.csv', header = True, index=True, encoding='utf-8')
+                dfPRR.to_csv(r'Results\dfPRR.csv', header = True,
+                             index=True, encoding='utf-8')
                 print(dfPRR)
-
-        #read in all result files
 
         #evaluate each sub portfolio
 
@@ -116,11 +112,22 @@ class Portfolio:
 
         #TODO: loop call the strategy execution function
         #to generate result files
+        df_list = []
         for i in range(n):
             #use momentum trading here
-            rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight, include_cash, verbose)
+            df = rotational_momentum(lookback,shtrm_weight,RSI_weight,
+                                     v_ratio_weight, include_cash, verbose)
+            file_dir = "Results/" + self.alias + "_" + str(i+1) + ".csv"
+            df.to_csv(file_dir, header = True, index=True)
+            df_list.append(df)
 
         #TODO: call _evaluate
+        self._evaluate(df_list)
+
+        return
+
+    #TODO: call backtest to collect performance of each params combo
+    def grid_search():
 
         return
 
@@ -129,5 +136,5 @@ class Portfolio:
 # portfolio = Portfolio("SPY AAPL")
 # portfolio.download_data("2017-01-01", "2017-04-30")
 # =============================================================================
-portf = Portfolio("")
+portf = Portfolio("", datafile_alias="train")
 print(portf._parse_frequency("4W-FRI-25%"))
