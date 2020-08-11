@@ -13,7 +13,7 @@ from helper import *
 import functions as ff
 yf.pdr_override() 
 
-def rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight, include_cash, verbose):
+def rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight,Z_weight, include_cash, verbose):
 
     #Hyper Parameters
     csv_name = "DIA.TLT"
@@ -54,8 +54,7 @@ def rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight, include
     
     dfMA = dfP.drop(labels=None, axis=1, columns=dfP.columns)
     dfRSI = compute_rsi(dfP, n=14)
-    dfZ = compute_zscore(dfP, n=20)
-
+    dfZ = compute_zscore(dfP, n=2*Aperiods)
 
     #pct_change calculates the percentage change (A[n] - A[n-periods])/A[n-periods]
     dfA = dfP.pct_change(periods=Aperiods-1, fill_method='pad', limit=None, freq=None) #is counting window from 0
@@ -77,30 +76,37 @@ def rotational_momentum(lookback,shtrm_weight,RSI_weight,v_ratio_weight, include
     dfA_ranks = rank_assets(dfA, order=1)
     dfB_ranks = rank_assets(dfB, order=1)
     dfS_ranks = rank_assets(dfS, order=0)
-    dfZ_ranks = rank_assets(dfZ, order=0)
-    #dfRSI_ranks = rank_assets(dfRSI, order=0)
     
 
     #Weights of the varous ranks 
     dfA_ranks = dfA_ranks.multiply(ShortTermWeight) 
     dfB_ranks = dfB_ranks.multiply(LongTermWeight) 
     dfS_ranks = dfS_ranks.multiply(ShortTermVolatilityWeight) 
-    dfRSI_ranks = dfRSI.multiply(RSI_weight) 
-    #dfZ_ranks = dfZ_ranks.multiply(Z_weight) 
+    
+    #Weighted RSI 
+    dfRSI_weighted = dfRSI.multiply(RSI_weight) 
+    
+    #weighted zscore
+    dfZ_sq = dfZ.multiply(dfZ) #square dfZ
+    dfZ_cube = dfZ_sq.multiply(dfZ) #Cube dfZ
+    dfZ_weighted = dfZ_cube.multiply(-Z_weight) #-ve weight because the lower the z-score the better
+    
+    #All ranks
     dfAll_ranks = dfA_ranks.add(dfB_ranks, fill_value=0)
     dfAll_ranks = dfAll_ranks.add(dfS_ranks, fill_value=0)
-    dfAll_ranks = dfAll_ranks.add(dfRSI_ranks, fill_value=0)
+    dfAll_ranks = dfAll_ranks.add(dfRSI_weighted, fill_value=0)
+    dfAll_ranks = dfAll_ranks.add(dfZ_weighted, fill_value=0)
     
     for column in range(columns):
         dfAll_ranks[dfP.columns[column]] = dfAll_ranks[dfP.columns[column]].values + (dfVR[dfP.columns[column]]['vratio'] - 1) * v_ratio_weight    
     
-    #dfAll_ranks = dfAll_ranks.add(dfZ_ranks, fill_value=0)
+    
 
     #Choice is the dataframe where the ETF with the maximum score is identified
-    dfChoice = choose_asset(dfP, dfAll_ranks, Filter)
+    dfChoice = choose_asset(dfAll_ranks, Filter=None, dfZ=dfZ, Zboundary=2.0)
 
     #calculate results
-    TotaAnnReturn, CAGR, sharpe, volatility = calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose)
+    dfPRR, TotaAnnReturn, CAGR, sharpe, volatility = calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose)
     
     return TotaAnnReturn, CAGR, sharpe, volatility
 

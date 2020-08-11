@@ -62,6 +62,9 @@ def compute_zscore(dfP, n=20):
     for column in range(columns):
         dfZ[dfP.columns[column]] = (dfP[dfP.columns[column]]-dfP[dfP.columns[column]].rolling(window=n).mean())/dfP[dfP.columns[column]].rolling(window=n).std()
         dfZ[dfP.columns[column]].fillna(value=float('inf'), inplace=True)
+    
+    #force z_score for Cash to be infinity
+    dfZ['CASH'] = 0
     return dfZ
 
 def rank_assets(df, order):
@@ -88,7 +91,7 @@ def rank_assets(df, order):
 
     return df_ranks
 
-def choose_asset(dfP, df_ranks, Filter, dfZ = None):
+def choose_asset(df_ranks, Filter, dfZ = None, Zboundary=2.0):
     dfChoice = df_ranks.copy(deep=True)
     dfChoice[:] = 0
     rows = dfChoice.shape[0]
@@ -101,16 +104,12 @@ def choose_asset(dfP, df_ranks, Filter, dfZ = None):
                 if (dfZ[dfZ.columns[max_arr_column]][row] < Zboundary): #alternative cash filter
                     dfChoice.iat[row, max_arr_column] = 1
                 else:
-                    dfChoice.iat[row, dfP.columns.get_loc(StandsForCash)] = 1
+                    dfChoice.iat[row, df_ranks.columns.get_loc('CASH')] = 1
             except:
                 print('Specify Z-score dataframe')
         else:
             dfChoice.iat[row, max_arr_column] = 1
-    #Filter 1 day whips
-#     for row in range(1,rows-1,1):
-#         if list(dfChoice.iloc[row].values) != list(dfChoice.iloc[row-1].values) and list(dfChoice.iloc[row].values) != list(dfChoice.iloc[row+1].values):
-#             dfChoice.iloc[row] = dfChoice.iloc[row-1]
-
+            
     return dfChoice
 
 
