@@ -7,9 +7,7 @@ from matplotlib import style
 import detrendPrice
 import WhiteRealityCheckFor1
 import yfinance as yf
-yf.pdr_override() 
-
-
+yf.pdr_override()
 
 def getDate(dt):
     if type(dt) != str:
@@ -21,7 +19,7 @@ def getDate(dt):
         return datetime_object
     else:
         return datetime_object
-    
+
 def load_data(csv_name, include_cash = 0):
     dfP = pd.read_csv(csv_name+'.csv', parse_dates=['Date'])
     dfAP = pd.read_csv(csv_name+'.AP.csv', parse_dates=['Date'])
@@ -32,16 +30,16 @@ def load_data(csv_name, include_cash = 0):
     if include_cash:
         dfP['CASH'] = 1
         dfAP['CASH'] = 1
-    
+
     return dfP, dfAP
 
 def compute_rsi(dfP, n=14):
-    
+
     dfRSI = dfP.drop(labels=None, axis=1, columns=dfP.columns)
-    
+
     columns = dfP.shape[1]
     for column in range(columns):
-        
+
         delta = dfP[dfP.columns[column]].diff()
         dUp, dDown = delta.copy(), delta.copy()
         dUp[dUp < 0] = 0
@@ -54,7 +52,7 @@ def compute_rsi(dfP, n=14):
 
         dfRSI[dfP.columns[column]] = 100/(100.0 - (100.0 / (1.0 + RS)))
         dfRSI[dfP.columns[column]].fillna(value=0.0, inplace=True)
-        
+
     return dfRSI
 
 def compute_zscore(dfP, n=20):
@@ -74,8 +72,8 @@ def rank_assets(df, order):
     columns = df_ranks.shape[1]
     rows = df_ranks.shape[0]
 
-    #this loop takes each row of the A dataframe, puts the row into an array, 
-    #within the array the contents are ranked, 
+    #this loop takes each row of the A dataframe, puts the row into an array,
+    #within the array the contents are ranked,
     #then the ranks are placed into the A_ranks dataframe one by one
     for row in range(rows):
         arr_row = df.iloc[row].values
@@ -87,7 +85,7 @@ def rank_assets(df, order):
         ranks[temp] = np.arange(1,len(arr_row)+1)
         for column in range(columns):
             df_ranks.iat[row, column] = ranks[column]
-            
+
     return df_ranks
 
 def choose_asset(dfP, df_ranks, Filter, dfZ = None):
@@ -108,11 +106,11 @@ def choose_asset(dfP, df_ranks, Filter, dfZ = None):
                 print('Specify Z-score dataframe')
         else:
             dfChoice.iat[row, max_arr_column] = 1
-    #Filter 1 day whips      
+    #Filter 1 day whips
 #     for row in range(1,rows-1,1):
 #         if list(dfChoice.iloc[row].values) != list(dfChoice.iloc[row-1].values) and list(dfChoice.iloc[row].values) != list(dfChoice.iloc[row+1].values):
 #             dfChoice.iloc[row] = dfChoice.iloc[row-1]
-            
+
     return dfChoice
 
 
@@ -122,17 +120,17 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
     columns = dfP.shape[1]
     for column in range(columns):
         dfDetrend[dfAP.columns[column]] =  detrendPrice.detrendPrice(dfAP[dfAP.columns[column]]).values
-    
+
     rows = dfChoice.shape[0]
-    
+
     #dfPRR is the dataframe containing the log or pct_change returns of the ETFs
     #will be based on adjusted prices rather than straight prices
     dfPRR= dfAP.pct_change()
     dfDetrendRR = dfDetrend.pct_change()
 
-    #T is the dataframe where the trading day is calculated. 
-    dfT = dfP.drop(labels=None, axis=1, columns=dfP.columns)    
-    columns = dfP.shape[1] 
+    #T is the dataframe where the trading day is calculated.
+    dfT = dfP.drop(labels=None, axis=1, columns=dfP.columns)
+    columns = dfP.shape[1]
     for column in range(columns):
         new = dfP.columns[column] + "_CHOICE"
         dfPRR[new] = pd.Series(np.zeros(rows), index=dfPRR.index)
@@ -145,7 +143,7 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
                      dfT1,
                      left_index = True,
                      right_index = True,
-                     how='outer', 
+                     how='outer',
                      indicator=True)
 
     dfTJoin = dfTJoin.loc[~dfTJoin.index.duplicated(keep='first')] #eliminates a row with a duplicate index which arises when using kibot data
@@ -171,7 +169,7 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
         dfPRR.loc[dfPRR[dfP.columns[column]+'_LEX'] == True, dfP.columns[column]+'_NUL' ] = 0
         dfPRR.loc[dfPRR[dfP.columns[column]+'_LEN'] == True, dfP.columns[column]+'_NUL' ] = 1 #this order is important
         dfPRR.iat[0,dfPRR.columns.get_loc(dfP.columns[column] + "_NUL")] = 0
-        dfPRR[dfP.columns[column] + "_NUL"] = dfPRR[dfP.columns[column] + "_NUL"].fillna(method='pad') 
+        dfPRR[dfP.columns[column] + "_NUL"] = dfPRR[dfP.columns[column] + "_NUL"].fillna(method='pad')
         new = dfP.columns[column] + "_R"
         dfPRR[new] = dfPRR[dfP.columns[column]]*dfPRR[dfP.columns[column]+'_NUL'].shift(Delay)
         #repeat for detrended returns
@@ -209,8 +207,10 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
 
     dfPRR = dfPRR.assign(DETREND_I = dfDetrendRR['I'])
 
+
+
     try:
-        sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252)) 
+        sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252))
     except ZeroDivisionError:
         sharpe = 0.0
     if verbose:
@@ -229,7 +229,7 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
     start_date = getDate(dfPRR.iloc[0].name)
     end_date = getDate(dfPRR.iloc[-1].name)
     days = (end_date - start_date).days
-    
+
 
     TotaAnnReturn = (end_val-start_val)/start_val/(days/360)
     TotaAnnReturn_trading = (end_val-start_val)/start_val/(days/252)
@@ -249,9 +249,8 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, Delay, verbose=0):
 
         #Detrending Prices and Returns
         WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
-        dfPRR.to_csv(r'Results\dfPRR.csv', header = True, index=True, encoding='utf-8')
+
         print(dfPRR)
-        
-        
-    return TotaAnnReturn, CAGR, sharpe, volatility
+
+    return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility
 
