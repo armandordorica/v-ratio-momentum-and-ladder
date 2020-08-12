@@ -137,7 +137,17 @@ class Portfolio:
         return
 
     #TODO: call backtest to collect performance of each params combo
-    def grid_search():
+    def grid_search(self):
+
+        #create cartesian product of params list
+
+        #for each params combo,
+
+            #call self.backtest
+
+            #collect metrics
+
+        #print and save metrics
 
         return
 
