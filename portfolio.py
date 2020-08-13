@@ -11,6 +11,7 @@ from matplotlib import style
 import numpy as np
 from computation_helper import *
 import pandas as pd
+import itertools
 
 
 class Portfolio:
@@ -120,9 +121,14 @@ class Portfolio:
         return df, TotaAnnReturn, CAGR, sharpe, volatility
 
     #TODO: call backtest to collect performance of each params combo
-    def grid_search(self):
+    def grid_search(self, TBD):
 
         #create cartesian product of params list
+# =============================================================================
+#         itertools example of param_1 [1,2] and param_2 [3,4]
+#         grid = list(itertools.product([1, 2],[3, 4]))
+#         grid should contain (1,3), (1,4), (2,3), (2,4)
+# =============================================================================
 
         #for each params combo,
 
