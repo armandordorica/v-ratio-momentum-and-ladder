@@ -8,6 +8,8 @@ import WhiteRealityCheckFor1
 from helper import getDate
 import matplotlib.pyplot as plt
 from matplotlib import style
+import numpy as np
+from computation_helper import *
 
 
 class Portfolio:
@@ -50,68 +52,35 @@ class Portfolio:
         freq = re.match("\d+[A-Z]-[A-Z]*", frequency_str).group()
         return freq, str(shift)+unit, int(100/size)
 
-    #TODO: read result files and evaluate backtest performance
+
     def _evaluate(self, df_list):
-
-        #TODO: move this function to computation_helper.py
-        def evaluate(dfPRR):
-
-            try:
-                sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252))
-            except ZeroDivisionError:
-                sharpe = 0.0
-            if verbose:
-                style.use('fivethirtyeight')
-                dfPRR['I'].plot()
-                plt.legend()
-                plt.show()
-                #plt.savefig(r'Results\%s.png' %(title))
-                #plt.close()
-
-            start = 1
-            start_val = start
-            end_val = dfPRR['I'].iat[-1]
-
-
-            start_date = getDate(dfPRR.iloc[0].name)
-            end_date = getDate(dfPRR.iloc[-1].name)
-            days = (end_date - start_date).days
-
-
-            TotaAnnReturn = (end_val-start_val)/start_val/(days/360)
-            TotaAnnReturn_trading = (end_val-start_val)/start_val/(days/252)
-            volatility = dfPRR['ALL_R'].std() * math.sqrt(252)
-            volatility_dia = dfPRR['DIA'].std() * math.sqrt(252)
-            volatility_tlt = dfPRR['TLT'].std() * math.sqrt(252)
-
-            CAGR_trading = round(((float(end_val) / float(start_val)) ** (1/(days/252.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
-            CAGR = round(((float(end_val) / float(start_val)) ** (1/(days/350.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
-            if verbose:
-                print ("TotaAnnReturn = %f" %(TotaAnnReturn*100))
-                print ("CAGR = %f" %(CAGR*100))
-                print ("Sharpe Ratio = %f" %(round(sharpe,3)))
-                print("Volatility= %f" %(round(volatility,3)))
-                print("Volatility DIA= %f" %(round(volatility_dia,3)))
-                print("Volatility TLT= %f" %(round(volatility_tlt,3)))
-
-                #Detrending Prices and Returns
-                p_val = WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
-                dfPRR.to_csv(r'Results\dfPRR.csv', header = True,
-                             index=True, encoding='utf-8')
-                print(dfPRR)
-            return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val
 
         #evaluate each sub portfolio
         for df in df_list:
             dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(df)
 
-        #join all result files and evaluate
-        if len(df_list) > 1:
+        #join all result df and evaluate
+        n = len(df_list)
+        if n > 1:
+            dfPRR = df_list[0]
+            #aggregate ALL_R and DETREND_ALL_R
+            for i in range(1,n):
+                dfPRR.ALL_R += df_list[i].ALL_R
+                dfPRR.DETREND_ALL_R += df_list[i].DETREND_ALL_R
+            dfPRR.ALL_R = dfPRR.ALL_R / n
+            dfPRR.DETREND_ALL_R = dfPRR.DETREND_ALL_R / n
 
-            #join date, asset price,_NUL, return, all return, etc
-            df = pd.DataFrame()
+            #update I
+            dfPRR = dfPRR.assign(I =np.cumprod(1+dfPRR['ALL_R']))
+            dfPRR.iat[0,dfPRR.columns.get_loc('I')]= 1
 
-            dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(df)
+            #update DETREND_I
+            dfPRR = dfPRR.assign(DETREND_I =np.cumprod(1+dfPRR['DETREND_ALL_R']))
+            dfPRR.iat[0,dfPRR.columns.get_loc('DETREND_I')]= 1
+
+            dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(dfPRR)
+
+
         return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility
 
     #entry point of the backtest
