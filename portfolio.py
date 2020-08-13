@@ -10,24 +10,25 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 import numpy as np
 from computation_helper import *
+import pandas as pd
 
 
 class Portfolio:
 
-    def __init__(self, tickers_str, datafile_alias):
-        self.alias = datafile_alias
+    def __init__(self, tickers_str):
         self.tickers_str = tickers_str
         self.tickers_list = tickers_str.split()
         self.tickers_densed_str = ''.join(tickers_str.split())
-        self.data = None
+        self.data_dict = {}
 
     #TODO: move this to data_helper.py
-    def _download_data(self, start_date, end_date):
+    def download_data(self, datafile_alias, start_date, end_date):
 
         #declare price history location
-        base_name = self.alias + "_" + start_date + "_" + end_date
+        base_name = datafile_alias + "_" + start_date + "_" + end_date
         file_dir = "Data/" + base_name + ".csv"
         ap_file_dir = "Data/" + base_name + "_AP.csv"
+        self.data_dict[datafile_alias] = [file_dir, ap_file_dir]
 
         #download and save price history if not found locally
         if not (isfile(file_dir)):
@@ -41,6 +42,18 @@ class Portfolio:
             print("requested data history already exists!")
 
         return
+
+
+    def _load_data(self, datafile_alias):
+
+        file_dir = self.data_dict[datafile_alias][0]
+        ap_file_dir = self.data_dict[datafile_alias][1]
+
+        dfP = pd.read_csv(file_dir, parse_dates=['Date'])
+        dfAP = pd.read_csv(ap_file_dir, parse_dates=['Date'])
+
+        return dfP, dfAP
+
 
     #TODO: parse frequency_str to return freq, shift and number of
     #sub backtesting
@@ -84,7 +97,9 @@ class Portfolio:
         return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility
 
     #entry point of the backtest
-    def backtest(self, strategy, frequency, holding, rebalance_ratio=1):
+    def backtest(self, datafile_alias, strategy, frequency, holding, rebalance_ratio=1):
+
+        dfP, dfAP = self.load_data(datafile_alias)
 
         #TODO: call _parse_frequency
         freq, shift, n = self._parse_frequency(frequency)
@@ -94,8 +109,7 @@ class Portfolio:
         df_list = []
         for i in range(n):
             #use momentum trading here
-            df = rotational_momentum(lookback,shtrm_weight,RSI_weight,
-                                     v_ratio_weight, include_cash, verbose)
+            df = rotational_momentum(dfP, dfAP, TBD)
             file_dir = "Results/" + self.alias + "_" + str(i+1) + ".csv"
             df.to_csv(file_dir, header = True, index=True)
             df_list.append(df)
@@ -103,7 +117,7 @@ class Portfolio:
         #TODO: call _evaluate
         df, TotaAnnReturn, CAGR, sharpe, volatility = self._evaluate(df_list)
 
-        return
+        return df, TotaAnnReturn, CAGR, sharpe, volatility
 
     #TODO: call backtest to collect performance of each params combo
     def grid_search(self):
@@ -120,10 +134,11 @@ class Portfolio:
 
         return
 
+#example
+portfolio = Portfolio("SPY AAPL")
+portfolio.download_data("train", "2004-01-01", "2015-12-31")
+portfolio.backtest("train")
 # =============================================================================
-# #example
-# portfolio = Portfolio("SPY AAPL")
-# portfolio.download_data("2017-01-01", "2017-04-30")
+# portf = Portfolio("", datafile_alias="train")
+# print(portf._parse_frequency("4W-FRI-25%"))
 # =============================================================================
-portf = Portfolio("", datafile_alias="train")
-print(portf._parse_frequency("4W-FRI-25%"))
