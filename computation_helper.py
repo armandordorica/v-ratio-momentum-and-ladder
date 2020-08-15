@@ -214,44 +214,44 @@ def calculate_results(dfP, dfAP, dfChoice, Frequency, shift):
 
 def evaluate(dfPRR):
 
-            try:
-                sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252))
-            except ZeroDivisionError:
-                sharpe = 0.0
+    try:
+        sharpe = ((dfPRR['ALL_R'].mean() / dfPRR['ALL_R'].std()) * math.sqrt(252))
+    except ZeroDivisionError:
+        sharpe = 0.0
 
-            style.use('fivethirtyeight')
-            dfPRR['I'].plot()
-            plt.legend()
-            plt.show()
-            #plt.savefig(r'Results\%s.png' %(title))
-            #plt.close()
+    style.use('fivethirtyeight')
+    dfPRR['I'].plot()
+    plt.legend()
+    plt.show()
+    #plt.savefig(r'Results\%s.png' %(title))
+    #plt.close()
 
-            start = 1
-            start_val = start
-            end_val = dfPRR['I'].iat[-1]
-
-
-            start_date = getDate(dfPRR.iloc[0].name)
-            end_date = getDate(dfPRR.iloc[-1].name)
-            days = (end_date - start_date).days
+    start = 1
+    start_val = start
+    end_val = dfPRR['I'].iat[-1]
 
 
-            TotaAnnReturn = (end_val-start_val)/start_val/(days/360)
-            TotaAnnReturn_trading = (end_val-start_val)/start_val/(days/252)
-            volatility = dfPRR['ALL_R'].std() * math.sqrt(252)
-
-            CAGR_trading = round(((float(end_val) / float(start_val)) ** (1/(days/252.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
-            CAGR = round(((float(end_val) / float(start_val)) ** (1/(days/350.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
-            print ("TotaAnnReturn = %f" %(TotaAnnReturn*100))
-            print ("CAGR = %f" %(CAGR*100))
-            print ("Sharpe Ratio = %f" %(round(sharpe,3)))
-            print("Volatility= %f" %(round(volatility,3)))
-
-            #Detrending Prices and Returns
-            p_val = WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
+    start_date = getDate(dfPRR.iloc[0].name)
+    end_date = getDate(dfPRR.iloc[-1].name)
+    days = (end_date - start_date).days
 
 
-            return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val
+    TotaAnnReturn = (end_val-start_val)/start_val/(days/360)
+    #TotaAnnReturn_trading = (end_val-start_val)/start_val/(days/252)
+    volatility = dfPRR['ALL_R'].std() * math.sqrt(252)
+
+    CAGR_trading = round(((float(end_val) / float(start_val)) ** (1/(days/252.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
+    CAGR = round(((float(end_val) / float(start_val)) ** (1/(days/350.0))).real - 1,4) #when raised to an exponent I am getting a complex number, I need only the real part
+    print ("TotaAnnReturn = %f" %(TotaAnnReturn*100))
+    print ("CAGR = %f" %(CAGR*100))
+    print ("Sharpe Ratio = %f" %(round(sharpe,3)))
+    print("Volatility= %f" %(round(volatility,3)))
+
+    #Detrending Prices and Returns
+    p_val = WhiteRealityCheckFor1.bootstrap(dfPRR['DETREND_ALL_R'])
+
+
+    return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val
 
 def normcdf(X):
     (a1,a2,a3,a4,a5) = (0.31938153, -0.356563782, 1.781477937, -1.821255978, 1.330274429)
@@ -299,89 +299,97 @@ def compute_vratio(a, lag = 2, cor = 'hom'):
         zscore = 0
     return vratio, zscore, pval
 
-def hurst2(ts):
-    """ the implementation found in the blog Leinenbock
-    http://www.leinenbock.com/calculation-of-the-hurst-exponent-to-test-for-trend-and-mean-reversion/
-    """
-    tau = []; lagvec = []
-    #  Step through the different lags
-    for lag in range(2,100):
-        #  produce price difference with lag
-        pp = subtract(ts[lag:],ts[:-lag])
-        #  Write the different lags into a vector
-        lagvec.append(lag)
-        #  Calculate the variance of the differnce vector
-        tau.append(sqrt(std(pp)))
+# =============================================================================
+# def hurst2(ts):
+#     """ the implementation found in the blog Leinenbock
+#     http://www.leinenbock.com/calculation-of-the-hurst-exponent-to-test-for-trend-and-mean-reversion/
+#     """
+#     tau = []; lagvec = []
+#     #  Step through the different lags
+#     for lag in range(2,100):
+#         #  produce price difference with lag
+#         pp = subtract(ts[lag:],ts[:-lag])
+#         #  Write the different lags into a vector
+#         lagvec.append(lag)
+#         #  Calculate the variance of the differnce vector
+#         tau.append(sqrt(std(pp)))
+#
+#     #  linear fit to double-log graph (gives power)
+#     m = polyfit(log10(lagvec),log10(tau),1)
+#     # calculate hurst
+#     hurst = m[0]*2.0
+#     # plot lag vs variance
+#     #plt.plot(lagvec,tau,'o')
+#     #plt.show()
+#
+#     return hurst
+#
+# def hurst(ts):
+#     """ the implewmentation on the blog http://www.quantstart.com
+#     http://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing
+#     Returns the Hurst Exponent of the time series vector ts"""
+#     # Create the range of lag values
+#     lags = range(2, 100)
+#     # Calculate the array of the variances of the lagged differences
+#     tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
+#     # Use a linear fit to estimate the Hurst Exponent
+#     poly = polyfit(log(lags), log(tau), 1)
+#     # Return the Hurst exponent from the polyfit output
+#     return poly[0]*2.0
+#
+# def half_life(ts):
+#     """ this function calculate the half life of mean reversion
+#     """
+#     # calculate the delta for each observation.
+#     # delta = p(t) - p(t-1)
+#     delta_ts = diff(ts)
+#         # calculate the vector of lagged prices. lag = 1
+#     # stack up a vector of ones and transpose
+#     lag_ts = vstack([ts[1:], ones(len(ts[1:]))]).T
+#
+#     # calculate the slope (beta) of the deltas vs the lagged values
+#     beta = linalg.lstsq(lag_ts, delta_ts)
+#
+#     # compute half life
+#     half_life = log(2) / beta[0]
+#
+#     return half_life[0]
+# =============================================================================
 
-    #  linear fit to double-log graph (gives power)
-    m = polyfit(log10(lagvec),log10(tau),1)
-    # calculate hurst
-    hurst = m[0]*2.0
-    # plot lag vs variance
-    #plt.plot(lagvec,tau,'o')
-    #plt.show()
+# =============================================================================
+# def random_walk(seed=1000, mu = 0.0, sigma = 1, length=1000):
+#     """ this function creates a series of independent, identically distributed values
+#     with the form of a random walk. Where the best prediction of the next value is the present
+#     value plus some random variable with mean and variance finite
+#     We distinguish two types of random walks: (1) random walk without drift (i.e., no constant
+#     or intercept term) and (2) random walk with drift (i.e., a constant term is present).
+#     The random walk model is an example of what is known in the literature as a unit root process.
+#     RWM without drift: Yt = Yt−1 + ut
+#     RWM with drift: Yt = δ + Yt−1 + ut
+#     """
+#
+#     ts = []
+#     for i in range(length):
+#         if i == 0:
+#             ts.append(seed)
+#         else:
+#             ts.append(mu + ts[i-1] + random.gauss(0, sigma))
+#
+#     return ts
+# =============================================================================
 
-    return hurst
+# =============================================================================
+# def subset_dataframe(data, start_date, end_date):
+#     start = data.index.searchsorted(start_date)
+#     end = data.index.searchsorted(end_date)
+#     return data.ix[start:end]
+# =============================================================================
 
-def hurst(ts):
-    """ the implewmentation on the blog http://www.quantstart.com
-    http://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing
-    Returns the Hurst Exponent of the time series vector ts"""
-    # Create the range of lag values
-    lags = range(2, 100)
-    # Calculate the array of the variances of the lagged differences
-    tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
-    # Use a linear fit to estimate the Hurst Exponent
-    poly = polyfit(log(lags), log(tau), 1)
-    # Return the Hurst exponent from the polyfit output
-    return poly[0]*2.0
-
-def half_life(ts):
-    """ this function calculate the half life of mean reversion
-    """
-    # calculate the delta for each observation.
-    # delta = p(t) - p(t-1)
-    delta_ts = diff(ts)
-        # calculate the vector of lagged prices. lag = 1
-    # stack up a vector of ones and transpose
-    lag_ts = vstack([ts[1:], ones(len(ts[1:]))]).T
-
-    # calculate the slope (beta) of the deltas vs the lagged values
-    beta = linalg.lstsq(lag_ts, delta_ts)
-
-    # compute half life
-    half_life = log(2) / beta[0]
-
-    return half_life[0]
-
-def random_walk(seed=1000, mu = 0.0, sigma = 1, length=1000):
-    """ this function creates a series of independent, identically distributed values
-    with the form of a random walk. Where the best prediction of the next value is the present
-    value plus some random variable with mean and variance finite
-    We distinguish two types of random walks: (1) random walk without drift (i.e., no constant
-    or intercept term) and (2) random walk with drift (i.e., a constant term is present).
-    The random walk model is an example of what is known in the literature as a unit root process.
-    RWM without drift: Yt = Yt−1 + ut
-    RWM with drift: Yt = δ + Yt−1 + ut
-    """
-
-    ts = []
-    for i in range(length):
-        if i == 0:
-            ts.append(seed)
-        else:
-            ts.append(mu + ts[i-1] + random.gauss(0, sigma))
-
-    return ts
-
-def subset_dataframe(data, start_date, end_date):
-    start = data.index.searchsorted(start_date)
-    end = data.index.searchsorted(end_date)
-    return data.ix[start:end]
-
-def cointegration_test(y, x):
-    ols_result = sm.OLS(y, x).fit()
-    return ts.adfuller(ols_result.resid, maxlag=1)
+# =============================================================================
+# def cointegration_test(y, x):
+#     ols_result = sm.OLS(y, x).fit()
+#     return ts.adfuller(ols_result.resid, maxlag=1)
+# =============================================================================
 
 
 # =============================================================================
