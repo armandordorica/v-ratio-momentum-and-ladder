@@ -13,7 +13,6 @@ import math
 import datetime
 import matplotlib.pyplot as plt
 from matplotlib import style
-import detrendPrice
 import WhiteRealityCheckFor1
 import yfinance as yf
 from datetime import *
