@@ -27,8 +27,8 @@ class Portfolio:
 
         #declare price history location
         base_name = datafile_alias + "_" + start_date + "_" + end_date
-        file_dir = "Data/" + base_name + ".csv"
-        ap_file_dir = "Data/" + base_name + "_AP.csv"
+        file_dir = "data/" + base_name + ".csv"
+        ap_file_dir = "data/" + base_name + "_AP.csv"
         self.data_dict[datafile_alias] = [file_dir, ap_file_dir]
 
         #download and save price history if not found locally
@@ -100,7 +100,7 @@ class Portfolio:
             dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val = evaluate(dfPRR)
 
 
-        return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility
+        return dfPRR, TotaAnnReturn, CAGR, sharpe, volatility, p_val
 
     #entry point of the backtest
     def backtest(self, datafile_alias, lookback, Frequency, ShortTermWeight,
@@ -127,9 +127,9 @@ class Portfolio:
             df_list.append(df)
 
         #TODO: call _evaluate
-        df, TotaAnnReturn, CAGR, sharpe, volatility = self._evaluate(df_list)
+        df, TotaAnnReturn, CAGR, sharpe, volatility, p_val = self._evaluate(df_list)
 
-        return df, TotaAnnReturn, CAGR, sharpe, volatility
+        return df, TotaAnnReturn, CAGR, sharpe, volatility, p_val
 
     #TODO: call backtest to collect performance of each params combo
     def grid_search(self, datafile_alias, lookback, Frequency, ShortTermWeight,
@@ -147,14 +147,14 @@ class Portfolio:
                                       RSI_weight, v_ratio_weight, Z_weight))
 
         for combo in grid:
-            print(combo)
+            print("\n====================", combo, "====================")
             #call self.backtest
-            df, TotalAnnReturn, CAGR, sharpe, volatility\
+            df, TotalAnnReturn, CAGR, sharpe, volatility, p_val\
             = self.backtest(datafile_alias, combo[0], combo[1], combo[2], combo[3],
                        combo[4], combo[5], combo[6])
             output = [combo[0], combo[1], combo[2], combo[3],combo[4],
                       combo[5], combo[6], TotalAnnReturn, CAGR,
-                      sharpe, volatility]
+                      sharpe, volatility, p_val]
             results.append(output)
 
         result_df = pd.DataFrame.from_records(data=results,
@@ -168,27 +168,28 @@ class Portfolio:
                                                        "TotalAnnReturn",
                                                        "CAGR",
                                                        "sharpe",
-                                                       "volatility"])
+                                                       "volatility",
+                                                       "p_val"])
 
         file_dir = "Results/" + datafile_alias + "_gs" + ".csv"
         result_df.to_csv(file_dir, header = True, index=True)
         return
 
+
+portf = Portfolio("FDN IGV IYW KBE KCE KIE ITA VNQ IYJ PBJ ITB IEZ IBB IHE IHF \
+                  BIL IEI TLT IEF SHY")
+
 # =============================================================================
-# #example
-# portfolio = Portfolio("SPY AAPL")
-# portfolio.download_data("train", "2004-01-01", "2015-12-31")
-# portfolio.backtest("train")
+# portf.download_data("train", "2007-06-01", "2016-12-31")
+# portf.grid_search("train",
+#                   [10],
+#                   ["4W-FRI-100%", "2W-FRI-50%", "1W-FRI-25%"],
+#                   [1],
+#                   [1],
+#                   [1],
+#                   [1],
+#                   [-1])
 # =============================================================================
-portf = Portfolio("AAPL, WMT, INTC, NFLX")
-#print(portf._parse_frequency("4W-FRI-25%"))
-portf.download_data("experiment6", "2004-01-01", "2008-12-31")
-#portf.backtest("experiment6", 20, "4W-FRI-25%", 1, 2, 1, 0, 0)
-portf.grid_search("experiment6",
-                  [10, 20],
-                  ["1W-FRI-100%", "2W-FRI-100%", "3W-FRI-100%", "4W-FRI-25%"],
-                  [1],
-                  [2],
-                  [1],
-                  [0],
-                  [0])
+
+portf.download_data("test", "2019-01-01", "2020-07-31")
+portf.backtest("test", 10, "1W-FRI-100%", 3, 1, 1, 1, -2)
