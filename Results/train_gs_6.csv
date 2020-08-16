@@ -1,0 +1,4 @@
+,lookback,frequency,ShortTermWeight,LongTermWeight,RSI_weight,v_ratio_weight,Z_weight,TotalAnnReturn,CAGR,sharpe,volatility,p_val
+0,10,4W-FRI-100%,1,1,1,1,-1,0.161178269,0.0989,0.496043124,0.274871239,0.15488
+1,10,2W-FRI-50%,1,1,1,1,-1,0.59089921,0.2103,1.029917021,0.216265664,0.01336
+2,10,1W-FRI-25%,1,1,1,1,-1,3.090041734,0.4099,1.514094005,0.258939056,0.0014
